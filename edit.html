@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Record</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        input, button {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Edit Record</h1>
+        <input type="text" id="level1" placeholder="Level 1">
+        <input type="text" id="l1position" placeholder="L1 Position">
+        <input type="text" id="l2position" placeholder="L2 Position">
+        <input type="text" id="level2" placeholder="Level 2">
+        <input type="text" id="level3" placeholder="Level 3">
+        <input type="text" id="l3position" placeholder="L3 Position">
+        <input type="text" id="title" placeholder="Title">
+        <button onclick="updateData()">Update</button>
+    </div>
+
+    <script>
+        const apiUrl = `https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec`;
+        const sheetName = `${DEPLOYMENT_SHEET}`;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const rowData = JSON.parse(decodeURIComponent(urlParams.get('data')));
+
+        function populateFields() {
+            document.getElementById('level1').value = rowData.level1;
+            document.getElementById('l1position').value = rowData.l1position;
+            document.getElementById('l2position').value = rowData.l2position;
+            document.getElementById('level2').value = rowData.level2;
+            document.getElementById('level3').value = rowData.level3;
+            document.getElementById('l3position').value = rowData.l3position;
+            document.getElementById('title').value = rowData.Title;
+        }
+
+        function updateData() {
+            const updatedData = {
+                sheet: sheetName,
+                id: rowData.id,
+                level1: document.getElementById('level1').value,
+                l1position: document.getElementById('l1position').value,
+                l2position: document.getElementById('l2position').value,
+                level2: document.getElementById('level2').value,
+                level3: document.getElementById('level3').value,
+                l3position: document.getElementById('l3position').value,
+                Title: document.getElementById('title').value,
+            };
+
+            fetch(apiUrl + '?action=update', {
+                method: 'POST',
+                body: JSON.stringify(updatedData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Data updated: ' + JSON.stringify(data));
+                window.location.href = 'index.html';  // Redirect back to dashboard
+            });
+        }
+
+        populateFields();  // Populate form with existing data
+    </script>
+
+</body>
+</html>

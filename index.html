@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .search-bar {
+            width: 300px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f8f8;
+        }
+        .edit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+        .edit-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Google Sheets Dashboard</h1>
+            <input type="text" id="searchInput" class="search-bar" placeholder="Search...">
+        </div>
+
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Level 1</th>
+                    <th>L1 Position</th>
+                    <th>L2 Position</th>
+                    <th>Level 2</th>
+                    <th>Level 3</th>
+                    <th>L3 Position</th>
+                    <th>Title</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const apiUrl = `https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec`;
+        const sheetName = `${DEPLOYMENT_SHEET}`;
+
+        let fetchedData = [];
+
+        // Search Functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            const filteredData = fetchedData.filter(row => {
+                return Object.values(row).some(value => value.toString().toLowerCase().includes(searchValue));
+            });
+            renderTable(filteredData);
+        });
+
+        // Fetch all data once and store it locally
+        function fetchData() {
+            fetch(apiUrl + '?action=read&sheet=' + sheetName)
+            .then(response => response.json())
+            .then(data => {
+                fetchedData = data;  // Store data locally
+                renderTable(data);
+            });
+        }
+
+        // Render the table based on the data
+        function renderTable(data) {
+            const tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            data.forEach(row => {
+                const newRow = tableBody.insertRow();
+                newRow.insertCell(0).textContent = row.id;
+                newRow.insertCell(1).textContent = row.level1;
+                newRow.insertCell(2).textContent = row.l1position;
+                newRow.insertCell(3).textContent = row.l2position;
+                newRow.insertCell(4).textContent = row.level2;
+                newRow.insertCell(5).textContent = row.level3;
+                newRow.insertCell(6).textContent = row.l3position;
+                newRow.insertCell(7).textContent = row.Title;
+
+                const editCell = newRow.insertCell(8);
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.className = 'edit-btn';
+                editButton.onclick = () => editRow(row.id);
+                editCell.appendChild(editButton);
+            });
+        }
+
+        function editRow(id) {
+            const rowData = fetchedData.find(row => row.id == id);
+            // Redirect to the edit page with the data as a JSON string
+            window.location.href = `edit.html?data=${encodeURIComponent(JSON.stringify(rowData))}`;
+        }
+
+        fetchData();  // Initial data load
+    </script>
+
+</body>
+</html>
