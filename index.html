@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Sheets Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Gujarati:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
-  
+   
     <style>
         body {
             font-family: 'Noto Serif Gujarati', serif; direction: ltr;
@@ -32,12 +29,13 @@
         .header h1 {
             margin: 0;
         }
-        .search-bar {
-            width: 300px;
+        .search-bar, .filter {
+            width: 200px;
             padding: 10px;
             border-radius: 4px;
             border: 1px solid #ccc;
             font-size: 16px;
+            margin-right: 10px;
         }
         table {
             width: 100%;
@@ -71,13 +69,28 @@
             background-color: #45a049;
         }
     </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Gujarati:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div class="container">
         <div class="header">
             <h1>Google Sheets Dashboard</h1>
-            <input type="text" id="searchInput" class="search-bar" placeholder="Search...">
+            <div>
+                <input type="text" id="searchInput" class="search-bar" placeholder="Search...">
+                <select id="level1Filter" class="filter">
+                    <option value="">Level 1 Filter</option>
+                </select>
+                <select id="level2Filter" class="filter">
+                    <option value="">Level 2 Filter</option>
+                </select>
+                <select id="level3Filter" class="filter">
+                    <option value="">Level 3 Filter</option>
+                </select>
+            </div>
         </div>
 
         <table id="dataTable">
@@ -104,59 +117,103 @@
     const apiUrl = `https://script.google.com/macros/s/DEPLOYMENT_ID_PLACEHOLDER/exec`;
     const sheetName = `DEPLOYMENT_SHEET_PLACEHOLDER`;
 
+    let fetchedData = [];
 
-        let fetchedData = [];
+    // Fetch all data once and store it locally
+    function fetchData() {
+        fetch(apiUrl + '?action=read&sheet=' + sheetName)
+        .then(response => response.json())
+        .then(data => {
+            fetchedData = data;  // Store data locally
+            populateFilters(data);
+            renderTable(data);
+        });
+    }
 
-        // Search Functionality
-        document.getElementById('searchInput').addEventListener('input', function() {
-            const searchValue = this.value.toLowerCase();
-            const filteredData = fetchedData.filter(row => {
-                return Object.values(row).some(value => value.toString().toLowerCase().includes(searchValue));
-            });
-            renderTable(filteredData);
+    // Populate filter options
+    function populateFilters(data) {
+        const level1Options = new Set();
+        const level2Options = new Set();
+        const level3Options = new Set();
+
+        data.forEach(row => {
+            level1Options.add(row.level1);
+            level2Options.add(row.level2);
+            level3Options.add(row.level3);
         });
 
-        // Fetch all data once and store it locally
-        function fetchData() {
-            fetch(apiUrl + '?action=read&sheet=' + sheetName)
-            .then(response => response.json())
-            .then(data => {
-                fetchedData = data;  // Store data locally
-                renderTable(data);
-            });
-        }
+        const level1Select = document.getElementById('level1Filter');
+        const level2Select = document.getElementById('level2Filter');
+        const level3Select = document.getElementById('level3Filter');
 
-        // Render the table based on the data
-        function renderTable(data) {
-            const tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = '';
-            data.forEach(row => {
-                const newRow = tableBody.insertRow();
-                newRow.insertCell(0).textContent = row.id;
-                newRow.insertCell(1).textContent = row.level1;
-                newRow.insertCell(2).textContent = row.l1position;
-                newRow.insertCell(3).textContent = row.l2position;
-                newRow.insertCell(4).textContent = row.level2;
-                newRow.insertCell(5).textContent = row.level3;
-                newRow.insertCell(6).textContent = row.l3position;
-                newRow.insertCell(7).textContent = row.Title;
+        level1Options.forEach(option => {
+            level1Select.add(new Option(option, option));
+        });
 
-                const editCell = newRow.insertCell(8);
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Edit';
-                editButton.className = 'edit-btn';
-                editButton.onclick = () => editRow(row.id);
-                editCell.appendChild(editButton);
-            });
-        }
+        level2Options.forEach(option => {
+            level2Select.add(new Option(option, option));
+        });
 
-        function editRow(id) {
-            const rowData = fetchedData.find(row => row.id == id);
-            // Redirect to the edit page with the data as a JSON string
-            window.location.href = `edit.html?data=${encodeURIComponent(JSON.stringify(rowData))}`;
-        }
+        level3Options.forEach(option => {
+            level3Select.add(new Option(option, option));
+        });
 
-        fetchData();  // Initial data load
+        level1Select.addEventListener('change', filterTable);
+        level2Select.addEventListener('change', filterTable);
+        level3Select.addEventListener('change', filterTable);
+    }
+
+    // Filter the table based on selected filters and search input
+    function filterTable() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        const level1Filter = document.getElementById('level1Filter').value;
+        const level2Filter = document.getElementById('level2Filter').value;
+        const level3Filter = document.getElementById('level3Filter').value;
+
+        const filteredData = fetchedData.filter(row => {
+            const matchesSearch = Object.values(row).some(value => value.toString().toLowerCase().includes(searchValue));
+            const matchesLevel1 = !level1Filter || row.level1 === level1Filter;
+            const matchesLevel2 = !level2Filter || row.level2 === level2Filter;
+            const matchesLevel3 = !level3Filter || row.level3 === level3Filter;
+
+            return matchesSearch && matchesLevel1 && matchesLevel2 && matchesLevel3;
+        });
+
+        renderTable(filteredData);
+    }
+
+    // Render the table based on the data
+    function renderTable(data) {
+        const tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = '';
+        data.forEach(row => {
+            const newRow = tableBody.insertRow();
+            newRow.insertCell(0).textContent = row.id;
+            newRow.insertCell(1).textContent = row.level1;
+            newRow.insertCell(2).textContent = row.l1position;
+            newRow.insertCell(3).textContent = row.l2position;
+            newRow.insertCell(4).textContent = row.level2;
+            newRow.insertCell(5).textContent = row.level3;
+            newRow.insertCell(6).textContent = row.l3position;
+            newRow.insertCell(7).textContent = row.Title;
+
+            const editCell = newRow.insertCell(8);
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.className = 'edit-btn';
+            editButton.onclick = () => editRow(row.id);
+            editCell.appendChild(editButton);
+        });
+    }
+
+    function editRow(id) {
+        const rowData = fetchedData.find(row => row.id == id);
+        // Redirect to the edit page with the data as a JSON string
+        window.location.href = `edit.html?data=${encodeURIComponent(JSON.stringify(rowData))}`;
+    }
+
+    // Initial data load
+    fetchData();
     </script>
 
 </body>
