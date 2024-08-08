@@ -3,100 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Record</title>
+    <title>Edit Data</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Serif Gujarati', serif; direction: ltr;
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        h1 {
+        .header {
             margin-bottom: 20px;
         }
-        input, button {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 16px;
+        .header h1 {
+            margin: 0;
         }
-        button {
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .btn {
             background-color: #4CAF50;
             color: white;
-            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 4px;
             cursor: pointer;
+            border: none;
         }
-        button:hover {
+        .btn:hover {
             background-color: #45a049;
         }
+        .btn-cancel {
+            background-color: #f44336;
+        }
+        .btn-cancel:hover {
+            background-color: #e53935;
+        }
     </style>
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Gujarati:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
 </head>
 <body>
-
     <div class="container">
-        <h1>Edit Record</h1>
-        <input type="text" id="level1" placeholder="Level 1">
-        <input type="text" id="l1position" placeholder="L1 Position">
-        <input type="text" id="l2position" placeholder="L2 Position">
-        <input type="text" id="level2" placeholder="Level 2">
-        <input type="text" id="level3" placeholder="Level 3">
-        <input type="text" id="l3position" placeholder="L3 Position">
-        <input type="text" id="title" placeholder="Title">
-        <button onclick="updateData()">Update</button>
+        <div class="header">
+            <h1>Edit Data</h1>
+        </div>
+        <form id="editForm">
+            <div class="form-group">
+                <label for="id">ID</label>
+                <input type="text" id="id" disabled>
+            </div>
+            <div class="form-group">
+                <label for="level1">Level 1</label>
+                <input type="text" id="level1">
+            </div>
+            <div class="form-group">
+                <label for="l1position">L1 Position</label>
+                <input type="text" id="l1position">
+            </div>
+            <div class="form-group">
+                <label for="l2position">L2 Position</label>
+                <input type="text" id="l2position">
+            </div>
+            <div class="form-group">
+                <label for="level2">Level 2</label>
+                <input type="text" id="level2">
+            </div>
+            <div class="form-group">
+                <label for="level3">Level 3</label>
+                <input type="text" id="level3">
+            </div>
+            <div class="form-group">
+                <label for="l3position">L3 Position</label>
+                <input type="text" id="l3position">
+            </div>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title">
+            </div>
+            <button type="button" class="btn" onclick="saveData()">Save</button>
+            <button type="button" class="btn btn-cancel" onclick="cancelEdit()">Cancel</button>
+        </form>
     </div>
 
     <script>
-        const apiUrl = `https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec`;
-        const sheetName = `${DEPLOYMENT_SHEET}`;
+        const apiUrl = `https://script.google.com/macros/s/AKfycbyJ7R_bMI6m8KdHML6xqsl526h8OShqwq18Nt93Jf64KfZWoX-BbnNZVDnUcesZmzfb/exec`;
+        const sheetName = `v2`;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const rowData = JSON.parse(decodeURIComponent(urlParams.get('data')));
+        // Load data from localStorage and populate form fields
+        function loadData() {
+            const rowData = JSON.parse(localStorage.getItem('editRowData'));
 
-        function populateFields() {
-            document.getElementById('level1').value = rowData.level1;
-            document.getElementById('l1position').value = rowData.l1position;
-            document.getElementById('l2position').value = rowData.l2position;
-            document.getElementById('level2').value = rowData.level2;
-            document.getElementById('level3').value = rowData.level3;
-            document.getElementById('l3position').value = rowData.l3position;
-            document.getElementById('title').value = rowData.Title;
+            if (rowData) {
+                document.getElementById('id').value = rowData.id;
+                document.getElementById('level1').value = rowData.level1;
+                document.getElementById('l1position').value = rowData.l1position;
+                document.getElementById('l2position').value = rowData.l2position;
+                document.getElementById('level2').value = rowData.level2;
+                document.getElementById('level3').value = rowData.level3;
+                document.getElementById('l3position').value = rowData.l3position;
+                document.getElementById('title').value = rowData.Title;
+            } else {
+                alert('No data found.');
+            }
         }
 
-        function updateData() {
-            const updatedData = {
-                sheet: sheetName,
-                id: rowData.id,
+        function saveData() {
+            const rowData = {
+                id: document.getElementById('id').value,
                 level1: document.getElementById('level1').value,
                 l1position: document.getElementById('l1position').value,
                 l2position: document.getElementById('l2position').value,
                 level2: document.getElementById('level2').value,
                 level3: document.getElementById('level3').value,
                 l3position: document.getElementById('l3position').value,
-                Title: document.getElementById('title').value,
+                Title: document.getElementById('title').value
             };
 
-            fetch(apiUrl + '?action=update', {
+            fetch(apiUrl + '?action=update&sheet=' + sheetName, {
                 method: 'POST',
-                body: JSON.stringify(updatedData)
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(rowData)
             })
             .then(response => response.json())
-            .then(data => {
-                alert('Data updated: ' + JSON.stringify(data));
-                window.location.href = 'index.html';  // Redirect back to dashboard
-            });
+            .then(() => {
+                alert('Data saved successfully!');
+                localStorage.removeItem('editRowData'); // Clean up
+                window.location.href = 'index.html'; // Redirect back to the main page
+            })
+            .catch(error => console.error('Error:', error));
         }
 
-        populateFields();  // Populate form with existing data
-    </script>
+        function cancelEdit() {
+            localStorage.removeItem('editRowData'); // Clean up
+            window.location.href = 'index.html'; // Redirect back to the main page
+        }
 
+        // Load data when the page is loaded
+        loadData();
+    </script>
 </body>
 </html>
